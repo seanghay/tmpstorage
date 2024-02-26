@@ -4,7 +4,8 @@ import multer from 'multer';
 import { nanoid } from 'nanoid';
 import fs from 'node:fs/promises';
 import GracefulShutdown from 'http-graceful-shutdown';
-import { scheduleJob } from 'node-schedule'
+import { scheduleJob } from 'node-schedule';
+import sanitize from 'sanitize-filename'
 
 const MAX_AGE_MILLIS = 1000 * 60 * 60;
 
@@ -15,7 +16,7 @@ const upload = multer({
   storage: multer.diskStorage({
     destination: "uploads",
     filename(req, file, callback) {
-      callback(null, `${nanoid(11)}_${file.originalname}`);
+      callback(null, `${nanoid(11)}-${sanitize(file.originalname)}`);
     }
   }),
 });
