@@ -2,9 +2,11 @@ import 'dotenv/config.js';
 import express from 'express';
 import multer from 'multer';
 import { nanoid } from 'nanoid';
-import path from 'node:path';
 import fs from 'node:fs/promises';
 import GracefulShutdown from 'http-graceful-shutdown';
+import { scheduleJob } from 'node-schedule'
+
+const MAX_AGE_MILLIS = 1000 * 60 * 60;
 
 const upload = multer({
   limits: {
@@ -26,7 +28,16 @@ app.use("/uploads", express.static("uploads"));
 
 app.post("/upload", upload.single("file"), async (req, res) => {
   try {
-    res.json({ file: req.file.path });
+    // expires in 1 hour
+    const expiredAt = new Date(Date.now() + MAX_AGE_MILLIS);
+    scheduleJob(expiredAt, async () => {
+      try {
+        await fs.unlink(req.file.path);
+      } catch (e) {
+        console.error(e);
+      }
+    });
+    res.json({ file: req.file.path, expiredAt });
     return
   } catch (e) {
     res.status(500).json({ msg: 'error', });
